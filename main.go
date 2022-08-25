@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -71,6 +72,7 @@ func main() {
 		posts += fmt.Sprintf("%s %s\n", pageId, slug)
 	}
 	writeToFile("posts", posts)
+	deploy(blog_dir)
 }
 
 func getPostContent(postId string, client *notionapi.Client) (content string) {
@@ -188,6 +190,19 @@ func parseCurrentPosts() (currPosts Posts) {
 	return
 }
 
+func deploy(blog_dir string) {
+	os.Chdir(blog_dir)
+	_, err := exec.Command("git", "add", "-A").Output()
+	if err != nil {
+		fmt.Println("Error!!", err)
+	}
+	cmd := exec.Command("git", "commit", "-m", "New Post!!")
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println("Error!!", err)
+	}
+}
+
 func writeToFile(fileName, content string) {
 	data := []byte(content)
 
@@ -239,6 +254,9 @@ func annotateText(r notionapi.RichText) (annotatedText string) {
 	}
 	if r.Annotations.Strikethrough {
 		annotatedText = fmt.Sprintf("~~%s~~", annotatedText)
+	}
+	if r.Annotations.Code {
+		annotatedText = fmt.Sprintf("`%s`", annotatedText)
 	}
 	return
 }
