@@ -13,7 +13,7 @@ Direct any and all questions @ me@ayaan.ga or @LOLwierd_ on twitter.
 ## Known Bugs / Missing Features
 - [x] Cannot rename slug (does not delete original post after rename)
 - [ ] Cannot delete posts from notion
-- [ ] Set updated to false after fetching and building
+- [x] Set updated to false after fetching and building
 - [ ] Add embed support for YT, gists, vimeo, tweets.
 - [ ] Add callout support
 - [ ] Add more syntax highlighters to original theme

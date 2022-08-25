@@ -1,6 +1,3 @@
-// TODO: figure out executable / deployment
-// TODO: get good code/file structure
-
 package main
 
 import (
@@ -87,6 +84,11 @@ func main() {
 		}
 		log.Infof("Writing to updated blog file: %s now!!", slug)
 		writeToFile(fmt.Sprintf("%s/%s.md", blog_dir, pMetadata.slug), getPostHead(pMetadata)+getPostContent(page.ID.String(), client))
+		log.Infof("Trying to set updated to false for %s", page.ID)
+		_, updateErr := client.Page.Update(context.Background(), notionapi.PageID(page.ID.String()), &notionapi.PageUpdateRequest{Properties: notionapi.Properties{"updated": notionapi.CheckboxProperty{Checkbox: false}}})
+		if updateErr != nil {
+			log.Errorf("Error: %s while trying to set updated to false!!!", updateErr)
+		}
 	}
 	var posts string
 	for pageId, slug := range updatedPosts {
@@ -184,7 +186,7 @@ func getPostContent(postId string, client *notionapi.Client) (content string) {
 			if v.ToDo.Checked {
 				content += "- [x] "
 			} else {
-				content += "- [] "
+				content += "- [ ] "
 			}
 			for _, r := range v.ToDo.RichText {
 				content += getBlockContent(&r)
