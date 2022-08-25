@@ -1,6 +1,4 @@
-// TODO: find a way to store page ids with blog posts or anywhere to solve problrm of renamed posts not being deleted
-// TODO: figure out logging
-// TODO: figure out executable / deployment & wrangler
+// TODO: figure out executable / deployment
 // TODO: get good code/file structure
 
 package main
@@ -9,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -17,6 +14,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/jomei/notionapi"
+	log "github.com/sirupsen/logrus"
 )
 
 type PostMetaData struct {
@@ -32,39 +30,62 @@ type PostMetaData struct {
 // [postId] slug
 type Posts map[string]string
 
-func main() {
-	err := godotenv.Load()
+var blog_dir string
+var client *notionapi.Client
+var db_id string
+
+func init() {
+	file, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal("Error opening log file!!", err)
+	}
+	log.SetOutput(file)
+	log.SetFormatter(&log.TextFormatter{
+		DisableColors: true,
+		FullTimestamp: true,
+	})
+
+	err = godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+}
 
+func main() {
 	notion_secret := os.Getenv("NOTION_SECRET")
-	db_id := os.Getenv("DB_ID")
-	blog_dir := os.Getenv("BLOG_DIR")
+	db_id = os.Getenv("DB_ID")
+	blog_dir = os.Getenv("BLOG_DIR")
 	currPosts := parseCurrentPosts()
 	updatedPosts := currPosts
-	client := notionapi.NewClient(notionapi.Token(notion_secret))
+	client = notionapi.NewClient(notionapi.Token(notion_secret))
 	db, dberr := client.Database.Query(context.Background(), notionapi.DatabaseID(db_id), &notionapi.DatabaseQueryRequest{Filter: notionapi.PropertyFilter{Property: "updated", Checkbox: &notionapi.CheckboxFilterCondition{Equals: true}}})
 	if dberr != nil {
 		log.Fatal("DB ID wrong || API KEY wrong")
+	}
+	log.Infof("Updating/Adding %d pages!", len(db.Results))
+	if len(db.Results) == 0 {
+		fmt.Println("No posts are updated or added!! Try updating or adding posts before trying to revalidate again!")
+		log.Fatal("No changes!!")
 	}
 	for _, page := range db.Results {
 		pMetadata := getPostMetadata(&page)
 		slug := currPosts[pMetadata.postId]
 		if slug == "" {
 			updatedPosts[pMetadata.postId] = pMetadata.slug
-			fmt.Println("Post Id not found!!", pMetadata.postId)
+			log.Infof("Post Id not found!!", pMetadata.postId)
 		} else {
 			if slug != pMetadata.slug {
-				fmt.Println("Reanamed post", pMetadata.postId)
+				log.Infof("Reanamed post", pMetadata.postId)
 				err := os.Remove(fmt.Sprintf("%s/%s.md", blog_dir, slug))
 				if err != nil {
-					fmt.Println("things went bad like mah bich ", err)
+					log.Errorf("Eror %s while trying to remove file %s!!!", err, blog_dir+"/"+slug)
+					log.Errorf("Not updating Curr Posts file!!! Check immediately to resolve inconsistencies!!! ")
 				} else {
 					updatedPosts[pMetadata.postId] = pMetadata.slug
 				}
 			}
 		}
+		log.Infof("Writing to updated blog file: %s now!!", slug)
 		writeToFile(fmt.Sprintf("%s/%s.md", blog_dir, pMetadata.slug), getPostHead(pMetadata)+getPostContent(page.ID.String(), client))
 	}
 	var posts string
@@ -77,8 +98,9 @@ func main() {
 
 func getPostContent(postId string, client *notionapi.Client) (content string) {
 	blocks, APIerr := client.Block.GetChildren(context.Background(), notionapi.BlockID(postId), nil)
+	log.Infof("Converting %d blocks to MD", len(blocks.Results))
 	if APIerr != nil {
-		log.Fatal("BAD page_id", APIerr)
+		log.Error("PostID: %s, Error: %s", postId, APIerr)
 	}
 	for _, block := range blocks.Results {
 		switch v := block.(type) {
@@ -169,7 +191,7 @@ func getPostContent(postId string, client *notionapi.Client) (content string) {
 			}
 
 		default:
-			log.Printf("Shit stinks %T", block)
+			log.Warnf("New block of type %T detected!!", block)
 		}
 	}
 	return
@@ -177,9 +199,10 @@ func getPostContent(postId string, client *notionapi.Client) (content string) {
 
 func parseCurrentPosts() (currPosts Posts) {
 	currPosts = make(Posts)
+	log.Infof("Trying to parse current posts.")
 	content, err := ioutil.ReadFile("posts")
 	if err != nil {
-		fmt.Println("Some error in opening file!!")
+		log.Error("Error %s while trying to open file for current posts!!", err)
 	}
 	for _, s := range strings.Split(string(content), "\n") {
 		post := strings.Split(s, " ")
@@ -191,25 +214,33 @@ func parseCurrentPosts() (currPosts Posts) {
 }
 
 func deploy(blog_dir string) {
+	log.Infof("Trying to deploy!!")
 	os.Chdir(blog_dir)
 	_, err := exec.Command("git", "add", "-A").Output()
 	if err != nil {
-		fmt.Println("Error!!", err)
+		log.Errorf("Error %s while trying to run git add -A!!!", err)
 	}
 	cmd := exec.Command("git", "commit", "-m", "New Post!!")
 	err = cmd.Run()
 	if err != nil {
-		fmt.Println("Error!!", err)
+		fmt.Println("Probably trying to commit with no changes! :)")
+		log.Fatalf("Error %s while trying to run git commit. Probably trying to commit with no changes.", err)
 	}
+	// _, err = exec.Command("git", "push").Output()
+	// if err != nil {
+	// fmt.Println("Error while trying to run git push!!")
+	// 	log.Fatalf("Error %s while trying to run git push!!!", err)
+	// }
+	log.Infof("Deployed successfully!!!")
 }
 
 func writeToFile(fileName, content string) {
+	log.Infof("Trying to write into file %s", fileName)
 	data := []byte(content)
-
 	err := ioutil.WriteFile(fileName, data, 0644)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error: %s trying to write into file: %s", err, fileName)
 	}
 }
 
@@ -223,6 +254,7 @@ func getBlockContent(r *notionapi.RichText) (content string) {
 }
 
 func getPostHead(postMetadata PostMetaData) (postHead string) {
+	log.Infof("Creating PostHead.")
 	postHead += "---"
 	postHead += "\n"
 	postHead += fmt.Sprintf("title: \"%s\"", postMetadata.title)
@@ -241,6 +273,7 @@ func getPostHead(postMetadata PostMetaData) (postHead string) {
 	postHead += "\n"
 	postHead += "---"
 	postHead += "\n"
+	log.Infof("Post Head Created!! %s", postHead)
 	return
 }
 
@@ -262,6 +295,7 @@ func annotateText(r notionapi.RichText) (annotatedText string) {
 }
 
 func getPostMetadata(page *notionapi.Page) (pMetadata PostMetaData) {
+	log.Infof("Fetching Metadata for page %s", page.ID.String())
 	pMetadata = PostMetaData{date: page.LastEditedTime.Format("2006-01-02T15:04:05"), postId: page.ID.String()}
 	for k, p := range page.Properties {
 		switch v := p.(type) {
@@ -279,10 +313,12 @@ func getPostMetadata(page *notionapi.Page) (pMetadata PostMetaData) {
 			if k == "description" {
 				pMetadata.description = data
 			} else if k == "slug" {
-
+				if data == "" {
+					data = page.ID.String()
+				}
 				pMetadata.slug = data
 			} else {
-				fmt.Println("No supposed to be here are you??")
+				log.Warnf("New property: %s of type RichText detected!!", k)
 			}
 		case *notionapi.MultiSelectProperty:
 			var tags []string
@@ -295,8 +331,7 @@ func getPostMetadata(page *notionapi.Page) (pMetadata PostMetaData) {
 				pMetadata.draft = strconv.FormatBool(v.Checkbox)
 			}
 		default:
-			fmt.Printf("error somewhere somehow pata lagao daya %T\n", v)
-
+			log.Warnf("New property: %s of type %T detected!!", k, p)
 		}
 	}
 	return
