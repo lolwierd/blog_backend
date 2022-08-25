@@ -8,12 +8,12 @@ This backend basically fetches posts (with updated property set to true) from a 
 
 Direct any and all questions @ me@ayaan.ga or @LOLwierd_ on twitter.
 
-> (I will add the usage instructions shortly)
+> I will add the usage instructions shortly
 
 ## Known Bugs / Missing Features
-- [] Cannot rename (does not delete original post after rename)
-- [] Add embed support for YT, gists, vimeo, tweets.
-- [] Add callout support
-- [] Add more syntax highlighters to original theme
-- [] Add ToDo support to original theme
-- [] Add color support (??)
+- [ ] Cannot rename (does not delete original post after rename)
+- [ ] Add embed support for YT, gists, vimeo, tweets.
+- [ ] Add callout support
+- [ ] Add more syntax highlighters to original theme
+- [ ] Add ToDo support to original theme
+- [ ] Add color support (??)
