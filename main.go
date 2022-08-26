@@ -83,7 +83,7 @@ func main() {
 			}
 		}
 		log.Infof("Writing to updated blog file: %s now!!", slug)
-		writeToFile(fmt.Sprintf("%s/%s.md", blog_dir, pMetadata.slug), getPostHead(pMetadata)+getPostContent(page.ID.String(), client))
+		writeToFile(fmt.Sprintf("%s/%s.md", blog_dir, pMetadata.slug), getPostHead(pMetadata)+getPostContent(page.ID.String()))
 		log.Infof("Trying to set updated to false for %s", page.ID)
 		_, updateErr := client.Page.Update(context.Background(), notionapi.PageID(page.ID.String()), &notionapi.PageUpdateRequest{Properties: notionapi.Properties{"updated": notionapi.CheckboxProperty{Checkbox: false}}})
 		if updateErr != nil {
@@ -95,10 +95,10 @@ func main() {
 		posts += fmt.Sprintf("%s %s\n", pageId, slug)
 	}
 	writeToFile("posts", posts)
-	deploy(blog_dir)
+	deploy()
 }
 
-func getPostContent(postId string, client *notionapi.Client) (content string) {
+func getPostContent(postId string) (content string) {
 	blocks, APIerr := client.Block.GetChildren(context.Background(), notionapi.BlockID(postId), nil)
 	log.Infof("Converting %d blocks to MD", len(blocks.Results))
 	if APIerr != nil {
@@ -215,7 +215,7 @@ func parseCurrentPosts() (currPosts Posts) {
 	return
 }
 
-func deploy(blog_dir string) {
+func deploy() {
 	log.Infof("Trying to deploy!!")
 	os.Chdir(blog_dir)
 	_, err := exec.Command("git", "add", "-A").Output()
@@ -228,11 +228,11 @@ func deploy(blog_dir string) {
 		fmt.Println("Probably trying to commit with no changes! :)")
 		log.Fatalf("Error %s while trying to run git commit. Probably trying to commit with no changes.", err)
 	}
-	// _, err = exec.Command("git", "push").Output()
-	// if err != nil {
-	// fmt.Println("Error while trying to run git push!!")
-	// 	log.Fatalf("Error %s while trying to run git push!!!", err)
-	// }
+	 _, err = exec.Command("git", "push").Output()
+	 if err != nil {
+	 fmt.Println("Error while trying to run git push!!")
+		log.Fatalf("Error %s while trying to run git push!!!", err)
+	 }
 	log.Infof("Deployed successfully!!!")
 }
 
