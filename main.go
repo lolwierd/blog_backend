@@ -120,6 +120,7 @@ func getPostContent(postId string) (content string) {
 			for _, r := range v.Heading1.RichText {
 				content += getBlockContent(&r)
 			}
+			content += "\n"
 
 		case *notionapi.Heading2Block:
 			content += "\n"
@@ -127,6 +128,7 @@ func getPostContent(postId string) (content string) {
 			for _, r := range v.Heading2.RichText {
 				content += getBlockContent(&r)
 			}
+			content += "\n"
 
 		case *notionapi.Heading3Block:
 			content += "\n"
@@ -134,6 +136,7 @@ func getPostContent(postId string) (content string) {
 			for _, r := range v.Heading3.RichText {
 				content += getBlockContent(&r)
 			}
+			content += "\n"
 
 		case *notionapi.NumberedListItemBlock:
 			content += "\n"
@@ -141,6 +144,7 @@ func getPostContent(postId string) (content string) {
 			for _, r := range v.NumberedListItem.RichText {
 				content += getBlockContent(&r)
 			}
+			content += "\n"
 
 		case *notionapi.BulletedListItemBlock:
 			content += "\n"
@@ -148,6 +152,7 @@ func getPostContent(postId string) (content string) {
 			for _, r := range v.BulletedListItem.RichText {
 				content += getBlockContent(&r)
 			}
+			content += "\n"
 
 		case *notionapi.QuoteBlock:
 			content += "\n"
@@ -155,10 +160,12 @@ func getPostContent(postId string) (content string) {
 			for _, r := range v.Quote.RichText {
 				content += getBlockContent(&r)
 			}
+			content += "\n"
 
 		case *notionapi.DividerBlock:
 			content += "\n"
 			content += "---"
+			content += "\n"
 
 		case *notionapi.CodeBlock:
 			content += "\n"
@@ -170,6 +177,7 @@ func getPostContent(postId string) (content string) {
 			}
 			content += "\n"
 			content += "```"
+			content += "\n"
 
 		case *notionapi.ImageBlock:
 			content += "\n"
@@ -182,6 +190,7 @@ func getPostContent(postId string) (content string) {
 			content += "\" title=\""
 			content += title
 			content += "\" >}}"
+			content += "\n"
 
 		case *notionapi.ToDoBlock:
 			content += "\n"
@@ -193,6 +202,7 @@ func getPostContent(postId string) (content string) {
 			for _, r := range v.ToDo.RichText {
 				content += getBlockContent(&r)
 			}
+			content += "\n"
 
 		default:
 			log.Warnf("New block of type %T detected!!", block)
