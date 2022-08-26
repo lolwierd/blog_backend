@@ -1,3 +1,4 @@
 - [ ] figure out how to do some calls concurrently
 - [ ] figure out executable / deployment
 - [ ] get good code/file structure
+- [ ] add tests (??)

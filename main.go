@@ -22,6 +22,7 @@ type PostMetaData struct {
 	slug        string
 	draft       string
 	description string
+	tldr        string
 }
 
 // [postId] slug
@@ -111,6 +112,7 @@ func getPostContent(postId string) (content string) {
 			for _, r := range v.Paragraph.RichText {
 				content += getBlockContent(&r)
 			}
+			content += "\n"
 
 		case *notionapi.Heading1Block:
 			content += "\n"
@@ -228,11 +230,11 @@ func deploy() {
 		fmt.Println("Probably trying to commit with no changes! :)")
 		log.Fatalf("Error %s while trying to run git commit. Probably trying to commit with no changes.", err)
 	}
-	 _, err = exec.Command("git", "push").Output()
-	 if err != nil {
-	 fmt.Println("Error while trying to run git push!!")
+	_, err = exec.Command("git", "push").Output()
+	if err != nil {
+		fmt.Println("Error while trying to run git push!!")
 		log.Fatalf("Error %s while trying to run git push!!!", err)
-	 }
+	}
 	log.Infof("Deployed successfully!!!")
 }
 
@@ -265,6 +267,10 @@ func getPostHead(postMetadata PostMetaData) (postHead string) {
 	postHead += "\n"
 	postHead += fmt.Sprintf("description: \"%s\"", postMetadata.description)
 	postHead += "\n"
+	if postMetadata.tldr != "" {
+		postHead += fmt.Sprintf("tldr: \"%s\"", postMetadata.tldr)
+		postHead += "\n"
+	}
 	postHead += "tags: ["
 	for _, tag := range postMetadata.tags {
 		postHead += fmt.Sprintf("\"%s\", ", tag)
@@ -314,6 +320,8 @@ func getPostMetadata(page *notionapi.Page) (pMetadata PostMetaData) {
 			}
 			if k == "description" {
 				pMetadata.description = data
+			} else if k == "tldr" {
+				pMetadata.tldr = data
 			} else if k == "slug" {
 				if data == "" {
 					data = page.ID.String()
