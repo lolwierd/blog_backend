@@ -1,3 +1,5 @@
+# Used this for like a week. 🫡
+
 # Backend for my blog @ [lolwierd.ml](lolwierd.ml)
 
 Uses notion as a CMS for blogs.
