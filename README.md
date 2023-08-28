@@ -8,7 +8,7 @@ Blog frontend is deployed using hugo.
 
 This backend basically fetches posts (with updated property set to true) from a notion database, converts them into markdown and saves the corresponding markdown to the hugo content/posts folder. Hugo can then pick those files up and do its thing.
 
-Direct any and all questions @ me@ayaan.ga or @LOLwierd_ on twitter.
+Direct any and all questions @ me@lolwierd.com or @lolwierrd on twitter.
 
 > I will add the usage instructions shortly
 
