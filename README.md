@@ -1,6 +1,6 @@
 # Used this for like a week. 🫡
 
-# (Was) Backend for my blog @ [lolwierd.ml](lolwierd.com)
+# (Was) Backend for my blog @ [lolwierd.com](lolwierd.com)
 
 Uses notion as a CMS for blogs.
 
